@@ -1,0 +1,5 @@
+rules.ini -text
+*.md text
+*.py text
+*.bat text eol=crlf
+*.txt text
