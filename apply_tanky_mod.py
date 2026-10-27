@@ -237,13 +237,19 @@ def apply_mode(game: Path, mode: str) -> int:
     rules_sections = read_ini_sections(src_rules)
 
     dst_rules = game / cfg['rules']
-    created = not dst_rules.is_file()
     bak.mkdir(exist_ok=True)
-    if not created:
-        backup_of(dst_rules, bak)
+    man = bak / MANIFEST
+    first_time = True
+    if man.is_file():
+        first_time = not any(line.startswith(cfg['rules'] + '\t')
+                             for line in man.read_text(encoding='utf-8').splitlines())
+    if first_time:                      # 只在第一次记录"原来有没有这个文件"，重复安装不再备份自己的产物
+        created = not dst_rules.is_file()
+        if not created:
+            backup_of(dst_rules, bak)
+        with open(man, 'a', encoding='utf-8') as fh:
+            fh.write(f'{cfg["rules"]}\t{"created" if created else "replaced"}\n')
     shutil.copy2(src_rules, dst_rules)
-    with open(bak / MANIFEST, 'a', encoding='utf-8') as fh:
-        fh.write(f'{cfg["rules"]}\t{"created" if created else "replaced"}\n')
     print(f'  [1/4] {cfg["rules"]} 已写入（全部血量 {HP} + 降负载）')
 
     print('  [2/4] 任务包/地图里的地图自带覆盖:')
